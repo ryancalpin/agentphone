@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SNAP="${1:-}"
-HOME_DIR="/home/ryancalpin/agentphone"
+HOME_DIR="${AGENTPHONE_HOME:-$HOME/agentphone}"
 if [ -z "$SNAP" ]; then
   SNAP=$(ls -1t "$HOME_DIR"/snapshots/agentphone-avd-* 2>/dev/null | head -n 1 || true)
 fi

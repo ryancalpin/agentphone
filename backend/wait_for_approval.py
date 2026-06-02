@@ -3,13 +3,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 import urllib.error
 import urllib.request
 
 BASE = "http://127.0.0.1:3008"
-PUBLIC_BASE = "https://ryancalpin.gerbil-tritone.ts.net/android"
+PUBLIC_BASE = os.environ.get("AGENTPHONE_PUBLIC_URL", "http://127.0.0.1:3008")
 
 
 def request_json(method: str, path: str, data: dict | None = None) -> dict:
@@ -24,7 +25,7 @@ def request_json(method: str, path: str, data: dict | None = None) -> dict:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Create an AgentPhone approval and wait for Ryan's decision.")
+    parser = argparse.ArgumentParser(description="Create an AgentPhone approval and wait for user decision.")
     parser.add_argument("--app", default="AgentPhone")
     parser.add_argument("--risk", default="medium")
     parser.add_argument("--action", required=True)
@@ -54,7 +55,7 @@ def main() -> int:
             print("DENIED", flush=True)
             return 2
         if status == "editing":
-            print("Ryan is editing/taking control...", flush=True)
+            print("User is editing/taking control...", flush=True)
         time.sleep(3)
 
     print("EXPIRED", flush=True)

@@ -25,7 +25,7 @@ from raw_adb_track import RawAdbVideoTrack
 from mjpeg_fast import fast_jpeg_stream
 from screenrecord_stream import ScreenrecordStream
 
-AGENTPHONE_HOME = Path(os.environ.get("AGENTPHONE_HOME", "/home/ryancalpin/agentphone"))
+AGENTPHONE_HOME = Path(os.environ.get("AGENTPHONE_HOME", Path.home() / "agentphone"))
 PWA_DIR = AGENTPHONE_HOME / "pwa"
 STATE_DIR = AGENTPHONE_HOME / "state"
 

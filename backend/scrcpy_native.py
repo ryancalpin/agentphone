@@ -15,7 +15,7 @@ from av.codec import CodecContext
 
 import adbctl
 
-AGENTPHONE_HOME = Path(os.environ.get("AGENTPHONE_HOME", "/home/ryancalpin/agentphone"))
+AGENTPHONE_HOME = Path(os.environ.get("AGENTPHONE_HOME", Path.home() / "agentphone"))
 SCRCPY_SERVER = Path(os.environ.get("AGENTPHONE_SCRCPY_SERVER", "/usr/share/scrcpy/scrcpy-server"))
 REMOTE_SERVER = "/data/local/tmp/scrcpy-server-agentphone"
 SCRCPY_PORT = int(os.environ.get("AGENTPHONE_SCRCPY_PORT", "27183"))

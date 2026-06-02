@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-HOME_DIR="/home/ryancalpin/agentphone"
+HOME_DIR="${AGENTPHONE_HOME:-$HOME/agentphone}"
 SNAP_DIR="$HOME_DIR/snapshots"
 AVD_DIR="$HOME_DIR/avd"
 ADB="$HOME_DIR/android-sdk/platform-tools/adb"

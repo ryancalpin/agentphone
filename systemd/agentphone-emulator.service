@@ -4,16 +4,16 @@ After=default.target
 
 [Service]
 Type=simple
-EnvironmentFile=/home/ryancalpin/agentphone/state/agentphone.env
-Environment=PATH=/home/ryancalpin/agentphone/android-sdk/platform-tools:/home/ryancalpin/agentphone/android-sdk/emulator:/home/ryancalpin/agentphone/android-sdk/cmdline-tools/latest/bin:/usr/local/bin:/usr/bin:/bin
-Environment=ANDROID_HOME=/home/ryancalpin/agentphone/android-sdk
-Environment=ANDROID_AVD_HOME=/home/ryancalpin/agentphone/avd
-ExecStart=/home/ryancalpin/agentphone/android-sdk/emulator/emulator -avd AgentPhone -no-window -gpu host -no-audio -no-boot-anim -netdelay none -netspeed full -grpc 8554
+EnvironmentFile=%h/agentphone/state/agentphone.env
+Environment=PATH=%h/agentphone/android-sdk/platform-tools:%h/agentphone/android-sdk/emulator:%h/agentphone/android-sdk/cmdline-tools/latest/bin:/usr/local/bin:/usr/bin:/bin
+Environment=ANDROID_HOME=%h/agentphone/android-sdk
+Environment=ANDROID_AVD_HOME=%h/agentphone/avd
+ExecStart=%h/agentphone/android-sdk/emulator/emulator -avd AgentPhone -no-window -gpu host -no-audio -no-boot-anim -netdelay none -netspeed full -grpc 8554
 Restart=always
 RestartSec=10
-WorkingDirectory=/home/ryancalpin/agentphone
-StandardOutput=append:/home/ryancalpin/agentphone/logs/emulator.log
-StandardError=append:/home/ryancalpin/agentphone/logs/emulator.err.log
+WorkingDirectory=%h/agentphone
+StandardOutput=append:%h/agentphone/logs/emulator.log
+StandardError=append:%h/agentphone/logs/emulator.err.log
 
 [Install]
 WantedBy=default.target

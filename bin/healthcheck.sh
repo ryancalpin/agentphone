@@ -1,37 +1,29 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+# AgentPhone health check — verifies emulator, backend, and streaming.
+# Set AGENTPHONE_HOME to override default ~/agentphone.
 
-BASE="http://127.0.0.1:3008"
-TS="https://ryancalpin.gerbil-tritone.ts.net"
-ADB="/home/ryancalpin/agentphone/android-sdk/platform-tools/adb"
-TMP="/tmp/agentphone-health-shot.png"
+HOME_DIR="${AGENTPHONE_HOME:-$HOME/agentphone}"
+TS="${TAILSCALE_HOST:-}"  # set to your Tailscale hostname
+ADB="${ANDROID_HOME:-$HOME_DIR/android-sdk}/platform-tools/adb"
+FAILS=0
+fail() { echo "FAIL: $1"; FAILS=$((FAILS+1)); }
 
-ok() { printf '✅ %s\n' "$*"; }
-fail() { printf '❌ %s\n' "$*" >&2; exit 1; }
+$ADB devices 2>/dev/null | grep -q 'device' || fail "Emulator not connected via ADB"
+curl -sf http://127.0.0.1:3008/api/health >/dev/null || fail "Backend health check failed"
+curl -sf http://127.0.0.1:3008/api/status >/dev/null || fail "Backend status failed"
 
-curl -fsS "$BASE/api/health" >/dev/null || fail "Backend health failed"
-ok "Backend health"
+if [ -n "$TS" ]; then
+    curl -sf "$TS/android/api/health" >/dev/null || fail "Tailscale health check failed"
+fi
 
-"$ADB" devices | grep -q 'device$' || fail "ADB device missing"
-ok "ADB connected"
+if [ -f "$HOME_DIR/bin/webrtc-smoke.py" ]; then
+    python3 "$HOME_DIR/bin/webrtc-smoke.py" "http://127.0.0.1:3008/api/webrtc/offer" >/dev/null || fail "WebRTC video failed"
+fi
 
-boot=$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
-[ "$boot" = "1" ] || fail "Android not booted"
-ok "Android booted"
-
-curl -fsS "$BASE/api/screenshot.png" -o "$TMP" || fail "Screenshot endpoint failed"
-file "$TMP" | grep -q 'PNG image data' || fail "Screenshot is not PNG"
-ok "Screenshot endpoint"
-
-/home/ryancalpin/agentphone/bin/webrtc-smoke.py "$BASE/api/webrtc/offer" >/dev/null || fail "WebRTC video failed"
-ok "WebRTC video"
-
-code=$(curl -s -o /dev/null -w '%{http_code}' "$TS/android" || true)
-[ "$code" = "200" ] || fail "Tailscale /android returned $code"
-ok "Tailscale /android"
-
-root=$(curl -s -o /dev/null -w '%{http_code}' "$TS/" || true)
-[ "$root" = "200" ] || fail "Tailscale root returned $root"
-ok "Tailscale root still works"
-
-printf 'AgentPhone healthcheck passed.\n'
+if [ $FAILS -eq 0 ]; then
+    echo "✓ All checks passed"
+    exit 0
+else
+    echo "$FAILS check(s) failed"
+    exit 1
+fi

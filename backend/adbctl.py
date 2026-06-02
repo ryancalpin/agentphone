@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
-AGENTPHONE_HOME = Path(os.environ.get("AGENTPHONE_HOME", "/home/ryancalpin/agentphone"))
+AGENTPHONE_HOME = Path(os.environ.get("AGENTPHONE_HOME", Path.home() / "agentphone"))
 ANDROID_HOME = Path(os.environ.get("ANDROID_HOME", AGENTPHONE_HOME / "android-sdk"))
 ADB = ANDROID_HOME / "platform-tools" / "adb"
 
