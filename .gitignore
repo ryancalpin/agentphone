@@ -1,0 +1,28 @@
+# Android SDK (huge, not for git)
+android-sdk/
+
+# AVD images (multi-GB)
+avd/
+
+# Python virtual environment
+backend/.venv/
+backend/__pycache__/
+
+# Runtime state (approvals, screenshots, env)
+state/
+
+# Logs
+logs/
+
+# Snapshots (large tarballs)
+snapshots/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

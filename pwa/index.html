@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#070a13" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="AgentPhone" />
+  <link rel="apple-touch-icon" href="/android/icon.svg" />
+  <title>AgentPhone</title>
+  <link rel="manifest" href="/android/manifest.webmanifest" />
+  <link rel="icon" href="/android/icon.svg" />
+  <link rel="stylesheet" href="/android/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div>
+        <div class="brand">AgentPhone</div>
+        <div id="status" class="status">Connecting…</div>
+      </div>
+      <div class="top-actions">
+        <button id="notifyBtn" class="ghost">🔔</button>
+        <button id="approvalsBtn" class="ghost">✅ <span id="approvalCount">0</span></button>
+      </div>
+    </header>
+
+    <main id="main" class="phone-wrap">
+      <section id="screenPanel" class="screen-panel">
+        <button id="chromeToggle" class="chrome-toggle" aria-label="Show controls">☰</button>
+        <div id="screenStage" class="screen-stage">
+          <video id="webrtcVideo" class="hidden" autoplay muted playsinline></video>
+          <img id="screen" alt="Android screen" draggable="false" />
+          <div id="secureOverlay" class="secure-overlay hidden">
+            <div id="secureNodes" class="secure-nodes"></div>
+          </div>
+          <div id="touchDot" class="touch-dot hidden"></div>
+        </div>
+      </section>
+
+      <section id="approvalPanel" class="approval-panel hidden">
+        <div class="approval-head">
+          <button id="backToPhone" class="ghost">← Phone</button>
+          <h1>Approvals</h1>
+        </div>
+        <div id="approvalList" class="approval-list"></div>
+        <div id="approvalDetail" class="approval-detail hidden"></div>
+      </section>
+    </main>
+
+    <section id="keyboardDrawer" class="drawer hidden">
+      <textarea id="textInput" placeholder="Type text to send to Android…"></textarea>
+      <div class="drawer-actions">
+        <button id="sendText" class="primary">Send text</button>
+        <button id="closeKeyboard" class="ghost">Close</button>
+      </div>
+    </section>
+
+    <nav class="bottombar">
+      <button data-key="BACK">Back</button>
+      <button data-key="HOME">Home</button>
+      <button data-key="APP_SWITCH">Apps</button>
+      <button id="keyboardBtn">Keyboard</button>
+      <button id="shotBtn">Shot</button>
+    </nav>
+  </div>
+  <script src="/android/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "AgentPhone",
+  "short_name": "AgentPhone",
+  "description": "Persistent Android phone controlled through Hermes",
+  "start_url": "/android",
+  "scope": "/android/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070a13",
+  "theme_color": "#0b1020",
+  "icons": [
+    {
+      "src": "/android/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
