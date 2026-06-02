@@ -10,7 +10,7 @@ from typing import Any
 
 import av
 import numpy as np
-from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
+from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, MediaStreamTrack
 from aiortc.codecs import h264 as h264_codec
 from aiortc.rtcrtpsender import RTCRtpSender
 from fastapi import FastAPI, HTTPException
@@ -21,6 +21,9 @@ from pydantic import BaseModel, Field
 import adbctl
 import approvals
 from scrcpy_native import ScrcpyNativeStream
+from raw_adb_track import RawAdbVideoTrack
+from mjpeg_fast import fast_jpeg_stream
+from screenrecord_stream import ScreenrecordStream
 
 AGENTPHONE_HOME = Path(os.environ.get("AGENTPHONE_HOME", "/home/ryancalpin/agentphone"))
 PWA_DIR = AGENTPHONE_HOME / "pwa"
@@ -93,7 +96,7 @@ class NativeScrcpyVideoTrack(VideoStreamTrack):
         self.source = "scrcpy-native"
 
     async def recv(self) -> av.VideoFrame:
-        frame = await asyncio.to_thread(self.stream.latest_frame, 0.45)
+        frame = await asyncio.to_thread(self.stream.latest_frame, 0.1)
         if frame is None:
             self.source = "adb-fallback"
             await asyncio.sleep(self.fallback_interval)
@@ -121,6 +124,61 @@ class NativeScrcpyVideoTrack(VideoStreamTrack):
             self.stream.stop()
         finally:
             super().stop()
+
+
+class EmulatorNativeVideoTrack(VideoStreamTrack):
+    """WebRTC track using the emulator's built-in gRPC RTC service.
+
+    Frames come directly from the emulator's GPU-accelerated capture/encode
+    pipeline — no scrcpy, no ADB, no intermediate decode/re-encode.
+    """
+
+    kind = "video"
+
+    def __init__(self, emulator_track: MediaStreamTrack, fallback_fps: int = 8) -> None:
+        super().__init__()
+        self._emulator_track = emulator_track
+        self.fallback_interval = 1 / max(1, min(fallback_fps, 30))
+        self.timestamp = 0
+        self.time_base = Fraction(1, 90000)
+        self.last_frame: av.VideoFrame | None = None
+        self.source = "emulator-native"
+
+    async def recv(self) -> av.VideoFrame:
+        if self._emulator_track:
+            try:
+                frame = await self._emulator_track.recv()
+                self.last_frame = frame
+                self.timestamp += 3000
+                frame.pts = self.timestamp
+                frame.time_base = self.time_base
+                return frame
+            except Exception:
+                self._emulator_track = None
+                self.source = "adb-fallback"
+
+        # Fallback: ADB screenshots
+        await asyncio.sleep(self.fallback_interval)
+        try:
+            width, height, rgba = await asyncio.to_thread(adbctl.screenshot_rgba)
+            array = np.frombuffer(rgba, dtype=np.uint8).reshape((height, width, 4))
+            frame = av.VideoFrame.from_ndarray(array, format="rgba")
+        except Exception:
+            if self.last_frame is None:
+                array = np.zeros((1200, 540, 4), dtype=np.uint8)
+                frame = av.VideoFrame.from_ndarray(array, format="rgba")
+            else:
+                frame = self.last_frame.reformat(format="rgba")
+
+        self.last_frame = frame
+        self.timestamp += 3000
+        frame.pts = self.timestamp
+        frame.time_base = self.time_base
+        return frame
+
+    def stop(self) -> None:
+        self._emulator_track = None
+        super().stop()
 
 
 class WebRTCOffer(BaseModel):
@@ -250,29 +308,42 @@ def screenshot_png():
         return api_error(exc)
 
 
+@app.get("/api/stream.mp4")
+@app.get("/android/api/stream.mp4")
+def stream_mp4():
+    """Direct H.264 stream from Android screenrecord — no decode, no re-encode."""
+    sr = ScreenrecordStream(width=540, height=1200, bitrate=4_000_000)
+    sr.start()
+
+    def generate():
+        first_chunk = True
+        while True:
+            chunk = sr.get_chunk(timeout=0.5)
+            if chunk:
+                yield chunk
+                first_chunk = False
+            elif first_chunk:
+                # Send init segment if no data yet
+                time.sleep(0.1)
+                continue
+
+    # Store for cleanup on client disconnect
+    return StreamingResponse(
+        generate(),
+        media_type="video/mp4",
+        headers={
+            "Cache-Control": "no-store",
+            "Accept-Ranges": "none",
+        },
+    )
+
+
 @app.get("/api/stream.mjpeg")
 @app.get("/android/api/stream.mjpeg")
 def stream_mjpeg():
-    def frames():
-        while True:
-            try:
-                png = adbctl.screenshot_png()
-                yield (
-                    b"--agentphone\r\n"
-                    b"Content-Type: image/png\r\n"
-                    + f"Content-Length: {len(png)}\r\n\r\n".encode("ascii")
-                    + png
-                    + b"\r\n"
-                )
-                time.sleep(0.02)
-            except GeneratorExit:
-                break
-            except Exception:
-                time.sleep(0.25)
-
     return StreamingResponse(
-        frames(),
-        media_type="multipart/x-mixed-replace; boundary=agentphone",
+        fast_jpeg_stream(quality=50, target_width=540, max_fps=25),
+        media_type="multipart/x-mixed-replace; boundary=frame",
         headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
     )
 
@@ -290,8 +361,9 @@ async def webrtc_offer(req: WebRTCOffer):
             pcs.discard(pc)
 
     try:
-        track = NativeScrcpyVideoTrack(fallback_fps=4)
-        stream_source = "scrcpy-native"
+        # Raw ADB capture → aiortc encode. Single encode, GPU rendered.
+        track = RawAdbVideoTrack(fps=15)
+        stream_source = "adb-raw-native"
     except Exception:
         track = AdbScreenshotVideoTrack(fps=4)
         stream_source = "adb-screenshot"

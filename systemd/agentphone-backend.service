@@ -1,0 +1,18 @@
+[Unit]
+Description=AgentPhone Backend
+After=agentphone-emulator.service
+Wants=agentphone-emulator.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ryancalpin/agentphone/backend
+EnvironmentFile=/home/ryancalpin/agentphone/state/agentphone.env
+Environment=PATH=/home/ryancalpin/.local/bin:/home/ryancalpin/agentphone/android-sdk/platform-tools:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/ryancalpin/.local/bin/uv run uvicorn app:app --host 127.0.0.1 --port 3008
+Restart=always
+RestartSec=5
+StandardOutput=append:/home/ryancalpin/agentphone/logs/backend.log
+StandardError=append:/home/ryancalpin/agentphone/logs/backend.err.log
+
+[Install]
+WantedBy=default.target

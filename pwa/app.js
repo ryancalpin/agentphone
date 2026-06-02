@@ -32,7 +32,7 @@
     history.replaceState(null, '', suffix ? `${base}?${suffix}` : base);
   }
   let useStream = params.get('poll') !== '1';
-  let useWebRTC = useStream && params.get('video') !== '0' && params.get('mjpeg') !== '1';
+  let useWebRTC = useStream && params.get('video') !== '0' && params.get('mjpeg') !== '1' && params.get('webrtc') === '1';
   let pc = null;
   let chromeTimer = null;
 

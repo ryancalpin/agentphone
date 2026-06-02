@@ -168,11 +168,14 @@ def screenshot_png() -> bytes:
     return data
 
 
-def screenshot_rgba() -> tuple[int, int, bytes]:
+def screenshot_rgba(width: int = 0, height: int = 0) -> tuple[int, int, bytes]:
     """Return width, height, RGBA bytes from raw Android screencap.
 
     Raw screencap avoids PNG compression/decode and is faster for live video.
     Header is four little-endian uint32 values: width, height, format, colorspace.
+
+    If width/height are provided, the Android screencap is resized on-device
+    before transfer, reducing ADB bandwidth significantly.
     """
     data = adb("exec-out", "screencap", binary=True, timeout=10)
     assert isinstance(data, bytes)
